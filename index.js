@@ -20,6 +20,11 @@ client.on("message", async message => {
   const args = message.content.slice(config.prefix.length).trim().split(/ +/g);
   const command = args.shift().toLowerCase();
 
+  if (command === 'help') {
+    message.channel.send('Type !<COMMAND> to start');
+    message.channel.send('Available commands: join, leave, play, pause, stop, volume');
+  }
+
   if (command === 'join') {
     if (message.member.voiceChannel) {
       message.member.voiceChannel.join()
@@ -31,14 +36,23 @@ client.on("message", async message => {
       message.reply('You need to join a voice channel first!');
     }
   }
+
+  if (command === 'leave') {
+    try {
+      for (const connection of client.voiceConnections.values()) {
+          connection.disconnect();
+          connection.off();
+      }
+    } catch(err) {
+      message.reply('Not in a voice channel');
+    }
+  }
   
-  if(command === "mp3") {
-    if (!client.voiceConnections.has(message.member.voiceChanne)) {
+  if(command === "play") {
+    try {
       message.member.voiceChannel.join()
-        .then(connection => {
-          message.reply('I have successfully connected to the channel!');
-        })
         .catch(console.log);
+    } catch(err) {
     }
     const fname = args.join(" ");
     const broadcast = client.createVoiceBroadcast();
@@ -50,9 +64,29 @@ client.on("message", async message => {
     }
   }
 
-  if (command === 'leave') {
-    if (client.voiceConnections) {
-      message.member.voiceChannel.leave();
+  if (command === 'pause') {
+    try {
+      for (const connection of client.voiceConnections.values()) {
+        if (connection.speaking) {
+          connection.dispatcher.pause();
+        } else {
+          connection.dispatcher.resume();
+        }
+      }
+    } catch(err) {
+      message.reply('Not playing anything');
+    }
+  }
+
+  if (command === 'stop') {
+    try {
+      for (const connection of client.voiceConnections.values()) {
+        if (connection.speaking) {
+          connection.dispatcher.end();
+        }
+      }
+    } catch(err) {
+      message.reply('Not playing anything');
     }
   }
   
@@ -63,6 +97,7 @@ client.on("message", async message => {
         connection.volume = client.volume
     }
   }
+
 });
 
 client.login(config.token);
